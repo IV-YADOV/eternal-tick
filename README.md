@@ -1,4 +1,4 @@
-# Watch.Store — Next.js + Prisma (RUB) Starter
+# Eternal Tick — Next.js + Prisma (RUB) Starter
 
 Готовый старт для интернет‑магазина часов на **Next.js 14 (App Router)** + **PostgreSQL + Prisma** + **Tailwind**.
 Оплата **отключена** (тестовый режим), заказы создаются со статусом `pending`. Валюта по умолчанию — **RUB**.
