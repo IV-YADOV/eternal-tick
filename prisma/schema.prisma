@@ -1,0 +1,234 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Post {
+  id          String   @id @default(cuid())
+  slug        String   @unique
+  title       String
+  excerpt     String?
+  contentMd   String   @default("") // ← ДОБАВЬ дефолт
+  images      Json
+  published   Boolean  @default(false)
+  publishedAt DateTime?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+
+
+// ====== Бейджи товара ======
+enum ProductBadge {
+  NEW
+  SALE
+  HIT
+  LIMITED
+}
+
+// ====== Тип скидки промокода ======
+enum PromoType {
+  PERCENT // скидка в процентах
+  FIXED // фиксированная сумма (в центах валюты заказа)
+}
+
+// ===== Core entities =====
+
+model Brand {
+  id        String    @id @default(cuid())
+  name      String    @unique
+  slug      String    @unique
+  products  Product[]
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+}
+
+model Category {
+  id        String    @id @default(cuid())
+  name      String    @unique
+  slug      String    @unique
+  products  Product[]
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+}
+
+model Product {
+  id          String           @id @default(cuid())
+  slug        String           @unique
+  name        String
+  brandId     String
+  categoryId  String
+  description String
+  specs       Json
+  images      Json
+  isArchived  Boolean          @default(false)
+  variants    ProductVariant[]
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+
+  badge ProductBadge?
+
+  brand    Brand    @relation(fields: [brandId], references: [id])
+  category Category @relation(fields: [categoryId], references: [id])
+
+  @@index([isArchived])
+}
+
+model ProductVariant {
+  id         String      @id @default(cuid())
+  productId  String
+  sku        String      @unique
+  priceCents Int
+  currency   String
+  attributes Json
+  inStock    Int
+  product    Product     @relation(fields: [productId], references: [id])
+  cartItems  CartItem[]
+  orderItems OrderItem[]
+}
+
+model Cart {
+  id        String     @id @default(cuid())
+  userId    String?
+  user      User?      @relation(fields: [userId], references: [id])
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+  items     CartItem[]
+
+  @@index([userId])
+}
+
+model CartItem {
+  id        String         @id @default(cuid())
+  cartId    String
+  variantId String
+  qty       Int
+  cart      Cart           @relation(fields: [cartId], references: [id], onDelete: Cascade)
+  variant   ProductVariant @relation(fields: [variantId], references: [id])
+}
+
+// ===== Orders =====
+
+enum ContactMethod {
+  email
+  phone
+  telegram
+}
+
+model Order {
+  id            String        @id @default(cuid())
+  number        Int           @unique
+  email         String?
+  customerName  String        @default("")
+  contactMethod ContactMethod @default(telegram)
+  contactValue  String        @default("")
+  comment       String?
+  status        String
+  totalCents    Int
+  discountCents Int           @default(0) // ← добавлено
+  currency      String
+  address       Json
+  items         OrderItem[]
+  createdAt     DateTime      @default(now())
+
+  userId String?
+  user   User?   @relation(fields: [userId], references: [id])
+
+  // связь с промокодом
+  promoCodeId String?
+  promoCode   PromoCode? @relation(fields: [promoCodeId], references: [id])
+
+  @@index([userId])
+  @@index([promoCodeId]) // ← индекс по промокоду
+}
+
+model OrderItem {
+  id         String         @id @default(cuid())
+  orderId    String
+  variantId  String
+  qty        Int
+  priceCents Int
+  order      Order          @relation(fields: [orderId], references: [id])
+  variant    ProductVariant @relation(fields: [variantId], references: [id])
+}
+
+model User {
+  id        String   @id @default(cuid())
+  tgId      String   @unique
+  phone     String?  @unique
+  name      String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt // ← фикс
+
+  carts      Cart[]
+  orders     Order[]
+  codes      TgAuthCode[]
+  sessions   Session[]
+  userPromos UserPromo[]
+
+  // промокоды, созданные для пользователя (персональные)
+  ownedPromos PromoCode[] @relation("UserOwnedPromos")
+}
+
+model TgAuthCode {
+  id        String    @id @default(cuid())
+  userId    String
+  user      User      @relation(fields: [userId], references: [id])
+  code      String    @unique
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+}
+
+model Session {
+  id        String    @id @default(cuid())
+  userId    String
+  user      User      @relation(fields: [userId], references: [id])
+  token     String    @unique
+  createdAt DateTime  @default(now())
+  revokedAt DateTime?
+}
+
+// ===== Promo Codes =====
+
+model PromoCode {
+  id       String    @id @default(cuid())
+  code     String    @unique
+  type     PromoType
+  amount   Int // если PERCENT — 0..100, если FIXED — центы
+  isActive Boolean   @default(true)
+
+  startsAt      DateTime?
+  expiresAt     DateTime?
+  minOrderCents Int?
+  maxUses       Int?
+  usedCount     Int       @default(0)
+  perUserLimit  Int?
+
+  // персональный промокод
+  ownerUserId String?
+  ownerUser   User?   @relation("UserOwnedPromos", fields: [ownerUserId], references: [id])
+
+  // связи
+  orders     Order[] // связь через Order.promoCodeId
+  userUsages UserPromo[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model UserPromo {
+  id      String   @id @default(cuid())
+  userId  String
+  promoId String
+  usedAt  DateTime @default(now())
+
+  user  User      @relation(fields: [userId], references: [id])
+  promo PromoCode @relation(fields: [promoId], references: [id])
+
+  @@unique([userId, promoId])
+}
