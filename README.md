@@ -58,3 +58,18 @@
 - Добавить склад/остатки с блокировкой при оформлении (optimistic/pessimistic)
 - SEO: добавить JSON‑LD Product/Offer и sitemap
 - Admin: защитить /admin и реализовать CRUD товаров, цен, остатков
+
+## 📜 License & Copyright
+
+All rights reserved © 2025 **YADOV**  
+
+The source code of **Eternal Tick** is provided for reference and personal learning only.  
+
+- ❌ It is NOT allowed to copy or redistribute this project as your own  
+- ❌ It is NOT allowed to use this code in commercial or production projects without explicit written permission from **YADOV**  
+- ✅ You may review and learn from the code  
+- ✅ You may use small snippets for educational purposes with proper attribution  
+
+For licensing inquiries or commercial use, please contact:  
+👉 [GitHub Profile](https://github.com/IV-YADOV) | [velvetachannel@gmail.com]
+
