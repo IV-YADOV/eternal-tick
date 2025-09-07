@@ -47,8 +47,10 @@ async function updatePost(formData: FormData) {
   const contentMd = String(formData.get("contentMd") || "");
   const wantPublish = (formData.get("published") || "") === "on";
 
-  // берём текущий пост (для изображений и статуса)
-  const current = await prisma.post.findUnique({ where: { id }, select: { slug: true, images: true, published: true, publishedAt: true } });
+  const current = await prisma.post.findUnique({
+    where: { id },
+    select: { slug: true, images: true, published: true, publishedAt: true },
+  });
   if (!current) throw new Error("Post not found");
 
   const currentImages: string[] = Array.isArray(current.images) ? (current.images as string[]) : [];
@@ -71,7 +73,6 @@ async function updatePost(formData: FormData) {
     },
   });
 
-  // удалить физически снятые файлы
   await tryDeleteFiles(removeList);
 
   revalidatePath("/blog");
@@ -86,7 +87,6 @@ async function deletePost(formData: FormData) {
   if (!p) return redirect("/admin/posts");
 
   await prisma.post.delete({ where: { id } });
-
   await tryDeleteFiles(((p.images as string[]) ?? []).filter(Boolean));
 
   revalidatePath("/blog");
@@ -94,7 +94,10 @@ async function deletePost(formData: FormData) {
   redirect("/admin/posts?deleted=1");
 }
 
-export default async function EditPostPage({ params, searchParams }: { params: { id: string }, searchParams?: { saved?: string }}) {
+export default async function EditPostPage({
+  params,
+  searchParams,
+}: { params: { id: string }, searchParams?: { saved?: string }}) {
   const post = await prisma.post.findUnique({ where: { id: params.id } });
   if (!post) notFound();
 
@@ -113,6 +116,7 @@ export default async function EditPostPage({ params, searchParams }: { params: {
         </div>
       )}
 
+      {/* ФОРМА СОХРАНЕНИЯ */}
       <form action={updatePost} encType="multipart/form-data" className="space-y-4">
         <input type="hidden" name="id" value={post.id} />
 
@@ -137,7 +141,6 @@ export default async function EditPostPage({ params, searchParams }: { params: {
           <textarea name="contentMd" className="w-full min-h-[220px]" defaultValue={post.contentMd || ""} />
         </div>
 
-        {/* изображения: добавить/удалить */}
         <div>
           <label className="text-sm text-gray-600">Добавить изображения</label>
           <input type="file" name="images" multiple accept="image/*" className="w-full" />
@@ -163,12 +166,16 @@ export default async function EditPostPage({ params, searchParams }: { params: {
         </label>
 
         <div className="flex gap-3">
-          <button className="btn btn-primary">Сохранить</button>
-          <form action={deletePost}>
-            <input type="hidden" name="id" value={post.id} />
-            <button className="btn" type="submit">Удалить</button>
-          </form>
+          <button className="btn btn-primary" type="submit">Сохранить</button>
         </div>
+      </form>
+
+      {/* ОТДЕЛЬНАЯ ФОРМА УДАЛЕНИЯ (вне основной) */}
+      <form action={deletePost} className="pt-2">
+        <input type="hidden" name="id" value={post.id} />
+        <button className="btn btn-danger" type="submit" formNoValidate>
+          Удалить
+        </button>
       </form>
     </div>
   );

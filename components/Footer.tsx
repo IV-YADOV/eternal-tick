@@ -5,8 +5,8 @@ export default function Footer() {
     <footer className="border-t mt-16">
       <div className="container py-10 text-sm text-gray-600 grid md:grid-cols-4 gap-6">
         <div className="space-y-2">
-          <div className="font-semibold">Watch.Store</div>
-          <div>© {new Date().getFullYear()} Watch.Store</div>
+          <div className="font-semibold">EternalTick</div>
+          <div>© {new Date().getFullYear()} EternalTick</div>
         </div>
         <div className="space-y-2">
           <div className="font-semibold">Компания</div>

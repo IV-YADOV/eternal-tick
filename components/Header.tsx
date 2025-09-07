@@ -25,7 +25,7 @@ export default function Header() {
       <div className="container flex items-center justify-between gap-4 py-3 px-4 md:px-0">
         {/* Лого */}
         <Link href="/" className="text-lg md:text-xl font-semibold">
-          Watch.Store
+          EternalTick
         </Link>
 
         {/* Навигация (desktop) */}

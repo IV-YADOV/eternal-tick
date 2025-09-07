@@ -1,6 +1,7 @@
 // app/admin/layout.tsx
 import Link from "next/link";
 
+
 export const metadata = {
   title: "Админка — Watch.Store",
 };
